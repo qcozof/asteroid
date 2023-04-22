@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -28,6 +29,8 @@ const (
 //go:embed misc/description.txt
 var projectDescription string
 
+const noticeTitleLen = 50
+
 func main() {
 	var act ActionType
 	var site ActionType
@@ -36,76 +39,78 @@ func main() {
 	// ./asteroid --act init --site all [or site1|site2...]
 	// ./asteroid --act watch --site all [or site1|site2...]
 	// ./asteroid --act uninstall --site all [or site1|site2...]
-	flag.StringVar((*string)(&act), "act", "uninstall", actSupported)
-	flag.StringVar((*string)(&site), "site", "all", actSupported)
+	flag.StringVar((*string)(&act), "act", "", actSupported)
+	flag.StringVar((*string)(&site), "site", "", actSupported)
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) > 0 && args[0] == "version" {
 		fmt.Println(utils.Pur("v0.1"))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	fmt.Println(utils.Pur(projectDescription))
 
 	if len(act) == 0 {
 		log.Println(utils.Fata("missing param --act, usage:"), actSupported)
-		return
+		pressAnyKeyToContinue()
 	}
 	if len(site) == 0 {
 		log.Println(utils.Fata("missing param --site usage:"), actSupported)
-		return
+		pressAnyKeyToContinue()
 	}
 
 	if err := global.InitProjDir(); err != nil {
 		log.Println("global.InitProjDir:", utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	if err := global.InitLog(); err != nil {
 		log.Println("global.InitLog:", utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	if err := global.InitConfig(); err != nil {
 		log.Println("global.InitConfig:", utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	if err := global.InitDB(); err != nil {
 		log.Println("global.InitDB:", utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	db, err := global.GormDB.DB()
 	if err != nil {
 		log.Println(utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 	defer db.Close()
+
+	myNotify.InitConfig(global.ConfigFile)
 
 	siteList, err := getMatchSites(string(site))
 	if err != nil {
 		log.Println(utils.Fata(err))
-		return
+		pressAnyKeyToContinue()
 	}
 
 	for _, siteModel := range siteList {
 		siteDir := siteModel.SiteDir
 		if strings.TrimSpace(siteDir) == "" {
 			log.Println(utils.Fata("siteDir cannot be empty."))
-			return
+			pressAnyKeyToContinue()
 		}
 
 		if !utils.ExistsDir(siteDir) {
 			log.Println(utils.Fata("siteDir is not a dir."))
-			return
+			pressAnyKeyToContinue()
 		}
 
 		siteDirName, err := utils.GetLastDirName(siteDir, true)
 		if err != nil {
 			log.Println(utils.Fata("GetLastDirName err:", err.Error()))
-			return
+			pressAnyKeyToContinue()
 		}
 
 		go grt(act, siteModel, actSupported, siteDir, siteDirName)
@@ -119,6 +124,12 @@ func main() {
 				continue
 			}
 			fmt.Println("info chan NOT OK")
+		case info, ok := <-global.BroadcastHighlightInfoList:
+			if ok {
+				log.Println(utils.Tea(info))
+				continue
+			}
+			fmt.Println("highlight info chan NOT OK")
 
 		case err, ok := <-global.BroadcastErrorList:
 			if ok {
@@ -130,7 +141,12 @@ func main() {
 		case notice, ok := <-global.BroadcastNoticeList:
 			if ok {
 				log.Println(utils.Warn(notice))
-				go myNotify.NotifyAll("Notice", notice, "")
+
+				title := notice
+				if len(title) > noticeTitleLen {
+					title = title[0:noticeTitleLen]
+				}
+				go myNotify.NotifyAll("File modified ! "+title, notice, "")
 				continue
 			}
 			fmt.Println("notice chan NOT OK")
@@ -165,7 +181,7 @@ _____monitor:
 			break
 		}
 
-		err = service.MonitorService(siteDir, siteDirName)
+		err = service.MonitorService(siteModel, siteDir, siteDirName)
 		tips = "MonitorService err:"
 
 	case Uninstall:
@@ -179,9 +195,7 @@ _____monitor:
 	if err != nil {
 		global.ErrorToChan(tips, err)
 
-		fmt.Println("Press any key to exit.")
-		var input string
-		fmt.Scanln(&input)
+		pressAnyKeyToContinue()
 		return
 	}
 
@@ -197,7 +211,7 @@ _____monitor:
 		goto _____monitor
 	}
 
-	global.InfoToChan(siteModel.SiteDir + " OK.")
+	global.InfoHighlightToChan(siteModel.SiteDir + " OK.")
 }
 
 func getMatchSites(siteNameStr string) ([]model.SiteModel, error) {
@@ -225,4 +239,11 @@ func getMatchSites(siteNameStr string) ([]model.SiteModel, error) {
 	}
 
 	return siteList, nil
+}
+
+func pressAnyKeyToContinue() {
+	fmt.Println("Press any key to exit.")
+	var input string
+	fmt.Scanln(&input)
+	os.Exit(0)
 }

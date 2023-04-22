@@ -7,11 +7,12 @@ import (
 	"github.com/qcozof/asteroid/utils"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-func MonitorService(siteDir, siteDirName string) error {
+func MonitorService(siteModel model.SiteModel, siteDir, siteDirName string) error {
 
 	var fileDirList []model.FileListModel
 	if err := global.GormDB.Select("file_dir").Where("site=?", siteDirName).Group("file_dir").Find(&fileDirList).Error; err != nil {
@@ -37,19 +38,19 @@ func MonitorService(siteDir, siteDirName string) error {
 			relDir := strings.ReplaceAll(f.FileDir, siteDir, "")
 
 			if f.Hash != hs {
-				global.InfoToChan("hash NOT equal:", file)
+				global.InfoHighlightToChan("hash NOT equal:", file)
 
 				switch f.Policy {
 				case model.OverWrite:
 					originalFile := strings.ReplaceAll(file, siteDir, repositoryDir+siteDirName) //fmt.Sprintf("%s/%s", repositoryDir, file)
-					backupFile(file, global.BackupDir+"/"+siteDirName+"/"+relDir+"/"+f.FileName+"-"+time.Now().Format("20060102150405"))
+					backupFile(file, fmt.Sprintf("%s/%s/%s/%s-%s", global.BackupDir, siteDirName, relDir, f.FileName, time.Now().Format("20060102150405")))
 					replaceFile(originalFile, file, f.Perm)
 
 				default:
 
 				}
 			} else {
-				global.InfoToChan("hash equal:", file)
+				fmt.Println("hash equal:", file)
 			}
 
 			//2).not in table,remove
@@ -57,7 +58,12 @@ func MonitorService(siteDir, siteDirName string) error {
 			if err != nil {
 				global.ErrorToChan("utils.ListFolderFiles err:", err)
 			}
+
 			for _, tmpFile := range sliFiles {
+				if !mustInclude(tmpFile, siteModel.IncludeExt) {
+					continue
+				}
+
 				if fileInTable(tmpFile, fileList) {
 					continue
 				}
@@ -88,7 +94,7 @@ func replaceFile(originalFile, file string, originalPerm fs.FileMode) {
 	if err != nil {
 		global.ErrorToChan("replaceFile.utils.CopyFile err:", err)
 	} else {
-		global.NoticeToChan("replace file:", originalFile, "=>", file)
+		global.NoticeToChan("file restored:", filepath.Base(file), originalFile, "=>", file)
 		if err = utils.SetPerm(file, originalPerm); err != nil {
 			global.ErrorToChan("replace utils.SetPerm err:", err)
 		}
@@ -100,7 +106,7 @@ func backupFile(file, destFile string) {
 	if err != nil {
 		global.ErrorToChan("backupFile.utils.CopyFile err:", err)
 	} else {
-		global.NoticeToChan("backup file:", file, "=>", destFile)
+		global.InfoToChan("backup file:", file, "=>", destFile)
 	}
 }
 

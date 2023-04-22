@@ -13,6 +13,10 @@ func Uninstall(siteDirName string) error {
 		return err
 	}
 
+	if err = global.GormDB.Exec("VACUUM").Error; err != nil {
+		return err
+	}
+
 	if err = utils.RemoveAll(global.RepositoryDir + siteDirName); err != nil {
 		return err
 	}

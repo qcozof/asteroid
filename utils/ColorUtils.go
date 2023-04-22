@@ -7,6 +7,7 @@ var (
 	Warn = Yellow
 	Fata = Red
 	Pur  = Purple
+	Tea  = Teal
 )
 
 var (
