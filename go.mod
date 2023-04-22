@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/glebarez/sqlite v1.7.0
-	github.com/qcozof/my-notify v0.0.0-20220915081740-88c73bbc57c1
+	github.com/qcozof/my-notify v0.0.0-20230419094835-c2dc68912fd3
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.25.0
 )

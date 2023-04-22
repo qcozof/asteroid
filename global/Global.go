@@ -29,12 +29,15 @@ var (
 	RepositoryDir string
 	IsolationDir  string
 	BackupDir     string
+
+	ConfigFile string
 )
 
 var (
-	BroadcastInfoList   = make(chan string, 100)
-	BroadcastNoticeList = make(chan string, 100)
-	BroadcastErrorList  = make(chan string, 100)
+	BroadcastInfoList          = make(chan string)
+	BroadcastNoticeList        = make(chan string)
+	BroadcastErrorList         = make(chan string)
+	BroadcastHighlightInfoList = make(chan string)
 )
 
 const LogDir = "logs/"
@@ -89,12 +92,12 @@ func InitConfig() error {
 		if err := json.Unmarshal(bt, &Config); err != nil {
 			log.Println("InitConfig.json.Unmarshal err:", err)
 		}*/
-	configFile := MiscDir + "config.yaml"
-	if !utils.ExistsFile(configFile) {
-		return errors.New(configFile + " not exists.")
+	ConfigFile = MiscDir + "config.yaml"
+	if !utils.ExistsFile(ConfigFile) {
+		return errors.New(ConfigFile + " not exists.")
 	}
 
-	bt, err := os.ReadFile(configFile)
+	bt, err := os.ReadFile(ConfigFile)
 	if err != nil {
 		return err
 	}
@@ -143,6 +146,9 @@ func ErrorToChan(msg string, err error) {
 
 func InfoToChan(obj ...interface{}) {
 	BroadcastInfoList <- fmt.Sprintf("%+v", obj)
+}
+func InfoHighlightToChan(obj ...interface{}) {
+	BroadcastHighlightInfoList <- fmt.Sprintf("%+v", obj)
 }
 
 func NoticeToChan(obj ...interface{}) {

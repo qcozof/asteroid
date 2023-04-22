@@ -15,11 +15,11 @@ func InitService(siteModel model.SiteModel, siteDirName string) error {
 	//I.store original files to repository
 	//remove repo siteDirName data
 
-	global.BroadcastInfoList <- siteDirName + " cleaning dir and data ..."
+	global.InfoToChan(siteDirName, " cleaning dir and data ...")
 	if err := Uninstall(siteDirName); err != nil {
 		return err
 	}
-	global.BroadcastInfoList <- siteDirName + " cleaned"
+	global.InfoToChan(siteDirName, " cleaned")
 
 	//make repo && isolation dir
 	if err := utils.Mkdir(global.RepositoryDir + siteDirName); err != nil {
@@ -34,30 +34,31 @@ func InitService(siteModel model.SiteModel, siteDirName string) error {
 		return err
 	}
 
-	global.BroadcastInfoList <- siteDirName + " indexing files..."
+	global.InfoToChan(siteDirName, " indexing files...")
 	//add siteDirName data to repo
 
-	if err := copyFolder(siteModel, siteDirName, siteModel.SiteDir, global.RepositoryDir+siteDirName); err != nil {
+	beginTime := time.Now()
+	global.InfoToChan(siteDirName, " it may take some minutes or hours...")
+	if err := copyToRepository(siteModel, siteDirName, siteModel.SiteDir, global.RepositoryDir+siteDirName); err != nil {
 		return err
 	}
+	minutes := time.Now().Sub(beginTime).Minutes()
 
-	global.BroadcastInfoList <- siteDirName + " indexed"
-
+	global.InfoHighlightToChan(siteDirName, " indexed.", "Spent", minutes, "minutes.")
 	return nil
 }
 
-func copyFolder(siteModel model.SiteModel, siteDirName, src, dest string) error {
+func copyToRepository(siteModel model.SiteModel, siteDirName, src, dest string) error {
 	// 获取源文件夹的信息
 	fi, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
 
-	// 创建目标文件夹
-	if err := os.MkdirAll(dest, fi.Mode()); err != nil {
-		return err
-	}
-
+	/*	// 创建目标文件夹
+		if err := os.MkdirAll(dest, fi.Mode()); err != nil {
+			return err
+		}*/
 	// 获取源文件夹中的所有文件和文件夹
 	entries, err := os.ReadDir(src)
 	if err != nil {
@@ -76,7 +77,7 @@ func copyFolder(siteModel model.SiteModel, siteDirName, src, dest string) error 
 			}
 
 			// 递归拷贝文件夹
-			if err := copyFolder(siteModel, siteDirName, srcPath, destPath); err != nil {
+			if err := copyToRepository(siteModel, siteDirName, srcPath, destPath); err != nil {
 				return err
 			}
 		} else {
@@ -86,11 +87,16 @@ func copyFolder(siteModel model.SiteModel, siteDirName, src, dest string) error 
 				continue
 			}
 
+			// 创建目标文件夹(放這邊，避免創建空文件夾)
+			if err := os.MkdirAll(dest, fi.Mode()); err != nil {
+				return err
+			}
+
 			// 拷贝文件
 			if err := utils.CopyFile(srcPath, destPath); err != nil {
 				return err
 			}
-
+			fmt.Println(srcPath, " -> ", destPath)
 			addToDb(srcPath, siteDirName)
 		}
 	}
