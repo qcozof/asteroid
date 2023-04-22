@@ -2,44 +2,62 @@
 
 ### I. Set config
 #### A windows config example:
-edit `misc/config.json`
+edit `misc/config.yaml`
 
-```json
-{
-  "siteDir": "D:\\site1",
-  "asteroidDataDir": "misc\\",
-  "includeExt": ".php|.html",
-  "excludeDir": "D:\\site1\\exclude1|D:\\site1\\exclude2",
-  "monitorInterval": 10
-}
+```yaml
+asteroid-data-dir: misc #asteroid default data dir,it'll generated 3 dirs, repository,backup and isolution after init
+monitor-interval: 10 #Watch every 10 seconds
+site-list:
+  - site-name: site1 #sitename cannot duplicate
+    site-dir: D:\site1 #Specify the site dir to watch
+    include-ext: [] #Watch file extensions, leave [] to watch all files
+    exclude-dir: #Ignore watch dirs, leave [] to watch all dirs
+      - D:\site1\exclude1
+      - D:\site1\exclude2
+  - site-name: site2
+    site-dir: D:\site2
+    include-ext:  #Watch file *.php and *.config, leave [] to watch all files
+      - .php
+      - .config
+    exclude-dir:
+      - D:\site2\exclude1
+      - D:\site2\exclude2
+
+telegram:
+  api-url: https://api.telegram.org
+  token: 123:xxxxx
+  chat-id: -123
+  enable: true
+
+email:
+  host: smtp.exmail.qq.com
+  port: 465
+  username: xxx@qq.cn
+  password: 123456
+  enable: true
+  email-to:
+    - aaa@gmail.com
+    - bbb@gmail.com
 ```
-      
-#### Example Description:
 
-siteDir: D:\\site1, `//Specify the site to watch`   
-asteroidDataDir: "misc\\",` //asteroid default data dir,it'll generated 3 dirs, repository,backup and isolution after init `  
-includeExt: ".php|.html",`//Watch php files and html files, use "|" as separator, leave empty to watch all files`  
-excludeDir: "D:\\site1\\exclude1|D:\\site1\\exclude2",`//Ignore watch dirs, use "|" as separator`  
-monitorInterval: 10 `//Watch every 10 seconds`  
-
-**_Note:Windows dir separator '\' need double in config file._**
 
 ### II. How to run:
 1. Put `asteroid.exe` file and `misc` dir to the parent level of `D:\site1` like `D:\`
 2. Open a terminal like cmd or powershell  
 #### . Init data
 
+`all` can be replace as specify site name, such as `site1`.  
 ```cmd 
-asteroid.exe --act init
+asteroid.exe --act init --site all
 ```
 
 #### . Monitor site  
 ```cmd 
-asteroid.exe --act watch
+asteroid.exe --act watch --site all
 ```
 #### . Uninstall  
 ```cmd 
-asteroid.exe --act uninstall
+asteroid.exe --act uninstall --site all
 ```
 #### . Version  
 ```cmd 
@@ -50,7 +68,7 @@ asteroid.exe version
 In windows, you can use [NSSM](https://nssm.cc/download) to install `asteroid` as system service.  
 
 ```cmd
-nssm install asteroid "D:\asteroid.exe" "--act watch"
+nssm install asteroid "D:\asteroid.exe" "--act watch" "--site all"
 ```
 **_Please run after init_**  
 
@@ -58,7 +76,7 @@ Start service
 ```cmd
 nssm start asteroid
 ```
-**_While service running check logs/date.log to ensure service actually run._**  
+**_While service running check logs/{date}.log to ensure service actually run._**  
 
 Start,stop,restart,remove service
 ```cmd

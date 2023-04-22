@@ -3,7 +3,7 @@ monitor-interval: 10
 site-list:
   - site-name: site1
     site-dir: D:\workspace\dev\test\go\asteroid\site1
-    include-ext: []
+    include-ext: ['.ps','.px']
     exclude-dir:
       - D:\workspace\dev\test\go\asteroid\site1\exclude1
       - D:\workspace\dev\test\go\asteroid\site1\exclude2
@@ -23,10 +23,10 @@ telegram:
   enable: true
 
 email:
-  host: smtp.exmail.qq.com
+  host: smtp.gmail.com
   port: 465
-  username: xxx@qq.cn
-  password: 123456
+  username: xxx@gmail.com
+  password: zurjoncjyqboigaq
   enable: true
   email-to:
     - aaa@gmail.com
