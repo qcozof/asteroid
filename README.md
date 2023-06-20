@@ -87,3 +87,17 @@ nssm remove asteroid confirm
 
 ### Linux
 Expect for the installation service part, the others are almost the same.
+
+### I. Set config
+Refer to windows configuration.
+
+### II. Install as service and start
+```shell
+chmod +x install.sh
+./install.sh
+```
+### III. Uninstall service
+```shell
+chmod +x uninstall.sh
+./uninstall.sh
+```
