@@ -1,0 +1,18 @@
+[Unit]
+Description=asteroid
+After=network.target
+
+[Service]
+Type=simple
+# the default is not to use systemd for cgroups because the delegate issues still
+# exists and systemd currently does not support the cgroup feature set required
+# for containers run by docker
+WorkingDirectory=/usr/local/etc/asteroid/
+ExecStart=/usr/local/bin/asteroid --act watch --site all
+ExecReload=/bin/kill -s HUP $MAINPID
+PrivateTmp=true
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
