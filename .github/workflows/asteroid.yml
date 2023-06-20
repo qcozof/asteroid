@@ -1,0 +1,139 @@
+name: Release
+on:
+  push:
+    tags:
+      - '*'
+    
+jobs:
+  build:
+    permissions: write-all
+    strategy:
+      matrix:
+        # Include amd64 on all platforms.
+        goos: [windows, freebsd, openbsd, linux,  darwin]
+        goarch: [amd64, 386]
+        exclude:
+          # Exclude i386 on darwin .
+          - goarch: 386
+            goos: darwin
+          - goarch: 386
+            goos: windows
+          - goarch: 386
+            goos: openbsd
+        include:
+          # BEGIN Linux ARM 5 6 7
+          - goos: linux
+            goarch: arm
+            goarm: 7
+          - goos: linux
+            goarch: arm
+            goarm: 6
+          - goos: linux
+            goarch: arm
+            goarm: 5
+          # END Linux ARM 5 6 7
+          # BEGIN FreeBSD ARM 6 7
+          - goos: freebsd
+            goarch: arm
+            goarm: 6
+          - goos: freebsd
+            goarch: arm
+            goarm: 7
+          # END FreeBSD ARM 6 7
+          # BEGIN Other architectures
+          - goos: darwin
+            goarch: arm64
+          - goos: linux
+            goarch: arm64
+          - goos: linux
+            goarch: riscv64
+          - goos: windows
+            goarch: arm64
+          - goos: android
+            goarch: arm64
+          - goos: freebsd
+            goarch: arm64
+          - goos: openbsd
+            goarch: arm64
+          # END Other architectures
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOARM: ${{ matrix.goarm }}
+      CGO_ENABLED: 0
+
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Show workflow information
+        id: get_filename
+        run: |
+          export _NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM\"].friendlyName" -r < build/release-filenames.json)
+          echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, RELEASE_NAME: $_NAME"
+          echo "ASSET_NAME=$_NAME" >> $GITHUB_OUTPUT
+          echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.20
+
+      - name: Get project dependencies
+        run: go mod download
+
+      - name: Build android
+        run: |
+          mkdir -p build_assets
+          go build -v -o build_assets/android -trimpath -ldflags "-s -w -buildid=" 
+          cp -r LICENSE README.md misc/ build_assets/
+
+      - name: Rename Windows android
+        if: matrix.goos == 'windows'
+        run: |
+          cd ./build_assets || exit 1
+          mv android android.exe
+
+      - name: Create ZIP archive
+        run: |
+          pushd build_assets || exit 1
+          zip -9vr ../android-$ASSET_NAME.zip .
+          popd || exit 1
+          FILE=./android-$ASSET_NAME.zip
+          DGST=$FILE.dgst
+          openssl dgst -md5    $FILE | sed 's/([^)]*)//g' >>$DGST
+          openssl dgst -sha1   $FILE | sed 's/([^)]*)//g' >>$DGST
+          openssl dgst -sha256 $FILE | sed 's/([^)]*)//g' >>$DGST
+          openssl dgst -sha512 $FILE | sed 's/([^)]*)//g' >>$DGST
+
+      - name: Upload ZIP file to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+          path: android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+  
+      - name: Debug
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory: $(ls)"
+          echo "Files in build_assets directory: $(ls build_assets)"
+          echo "Files in root directory: $(ls /)"
+          echo "GitHub workspace directory: $(ls $GITHUB_WORKSPACE)"
+          echo ${{ github.ref }}
+          echo android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+  
+      - name: Upload files to GitHub release
+        uses: svenstaro/upload-release-action@v2
+        #if: github.event_name == 'release'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ./android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          tag: ${{ github.ref }}
