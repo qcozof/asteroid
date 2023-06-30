@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/qcozof/asteroid/model"
@@ -42,6 +43,8 @@ var (
 
 const LogDir = "logs/"
 const dbName = "asteroid.db"
+
+var mutex sync.Mutex
 
 func InitDB() error {
 	var err error
@@ -112,32 +115,57 @@ func InitConfig() error {
 	return err
 }
 
-func InitLog() error {
+func InitLog(runOnce bool) error {
+	var err error
 	logDir := AsteroidDir + LogDir
-	err := os.MkdirAll(logDir, os.ModePerm)
-	if err != nil {
-		return err
+
+	if runOnce {
+		err = os.MkdirAll(logDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
-	LogDate = time.Now()
-	logFileFmt := fmt.Sprintf("%s%s.log", logDir, LogDate.Format("2006-01-02"))
-	logFile, err := os.OpenFile(logFileFmt, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-	if err != nil {
-		return err
+	var logFile os.File
+	for {
+		if !runOnce {
+			now := time.Now()
+			tomorrow0Ux := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+			time.Sleep(time.Duration(tomorrow0Ux.Sub(now).Nanoseconds()) * time.Nanosecond) //10000s
+			logFile.Close()
+		}
+
+		logFileFmt := fmt.Sprintf("%s%s.log", logDir, LogDate.Format("2006-01-02"))
+		logFile, err := openFile(logFileFmt)
+		if err != nil {
+			fmt.Println("open log file failed, err:", err)
+			return err
+		}
+
+		//defer logFile.Close()
+
+		//both write to console and file
+		multiWriter := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(multiWriter)
+
+		//only write to file
+		//log.SetOutput(logFile)
+
+		log.SetPrefix(" [asteroid] ")
+		log.SetFlags(log.Lshortfile | log.Lmicroseconds | log.Ldate)
+
+		if runOnce {
+			break
+		}
 	}
 
-	//defer logFile.Close()
-
-	//同时输出到控制台和文件中
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(multiWriter)
-
-	//只输出到文件中
-	//log.SetOutput(logFile)
-
-	log.SetPrefix("[asteroid] ")
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	return err
+}
+
+func openFile(logFileFmt string) (*os.File, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return os.OpenFile(logFileFmt, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 }
 
 func ErrorToChan(msg string, err error) {
