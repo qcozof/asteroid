@@ -38,7 +38,7 @@ func InitService(siteModel model.SiteModel, siteDirName string) error {
 	//add siteDirName data to repo
 
 	beginTime := time.Now()
-	global.InfoToChan(siteDirName, " it may take some minutes or hours...")
+	global.InfoToChan(siteDirName, " it may take some minutes ...")
 	if err := copyToRepository(siteModel, siteDirName, siteModel.SiteDir, global.RepositoryDir+siteDirName); err != nil {
 		return err
 	}

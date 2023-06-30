@@ -87,24 +87,24 @@ jobs:
       - name: Get project dependencies
         run: go mod download
 
-      - name: Build android
+      - name: Build asteroid
         run: |
           mkdir -p build_assets
-          go build -v -o build_assets/android -trimpath -ldflags "-s -w -buildid=" 
+          go build -v -o build_assets/asteroid -trimpath -ldflags "-s -w -buildid=" 
           cp -r LICENSE README.md misc/ build_assets/
 
-      - name: Rename Windows android
+      - name: Rename Windows asteroid
         if: matrix.goos == 'windows'
         run: |
           cd ./build_assets || exit 1
-          mv android android.exe
+          mv asteroid asteroid.exe
 
       - name: Create ZIP archive
         run: |
           pushd build_assets || exit 1
-          zip -9vr ../android-$ASSET_NAME.zip .
+          zip -9vr ../asteroid-$ASSET_NAME.zip .
           popd || exit 1
-          FILE=./android-$ASSET_NAME.zip
+          FILE=./asteroid-$ASSET_NAME.zip
           DGST=$FILE.dgst
           openssl dgst -md5    $FILE | sed 's/([^)]*)//g' >>$DGST
           openssl dgst -sha1   $FILE | sed 's/([^)]*)//g' >>$DGST
@@ -114,8 +114,8 @@ jobs:
       - name: Upload ZIP file to Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
-          path: android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+          name: asteroid-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+          path: asteroid-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
   
       - name: Debug
         env:
@@ -127,7 +127,7 @@ jobs:
           echo "Files in root directory: $(ls /)"
           echo "GitHub workspace directory: $(ls $GITHUB_WORKSPACE)"
           echo ${{ github.ref }}
-          echo android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
+          echo asteroid-${{ steps.get_filename.outputs.ASSET_NAME }}.zip
   
       - name: Upload files to GitHub release
         uses: svenstaro/upload-release-action@v2
@@ -135,5 +135,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
-          file: ./android-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          file: ./asteroid-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
           tag: ${{ github.ref }}
