@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -26,10 +25,12 @@ const (
 	Uninstall ActionType = "uninstall"
 )
 
+const noticeTitleLen = 50
+
 //go:embed misc/description.txt
 var projectDescription string
 
-const noticeTitleLen = 50
+var commandUtils utils.CommandUtils
 
 func main() {
 	var act ActionType
@@ -46,71 +47,72 @@ func main() {
 	args := flag.Args()
 	if len(args) > 0 && args[0] == "version" {
 		fmt.Println(utils.Pur("v0.1"))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	fmt.Println(utils.Pur(projectDescription))
 
 	if len(act) == 0 {
 		log.Println(utils.Fata("missing param --act, usage:"), actSupported)
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 	if len(site) == 0 {
 		log.Println(utils.Fata("missing param --site usage:"), actSupported)
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitProjDir(); err != nil {
 		log.Println("global.InitProjDir:", utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
-	if err := global.InitLog(); err != nil {
+	if err := global.InitLog(true); err != nil {
 		log.Println("global.InitLog:", utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitConfig(); err != nil {
 		log.Println("global.InitConfig:", utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitDB(); err != nil {
 		log.Println("global.InitDB:", utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	db, err := global.GormDB.DB()
 	if err != nil {
 		log.Println(utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 	defer db.Close()
 
 	myNotify.InitConfig(global.ConfigFile)
+	go global.InitLog(false)
 
 	siteList, err := getMatchSites(string(site))
 	if err != nil {
 		log.Println(utils.Fata(err))
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 	}
 
 	for _, siteModel := range siteList {
 		siteDir := siteModel.SiteDir
 		if strings.TrimSpace(siteDir) == "" {
 			log.Println(utils.Fata("siteDir cannot be empty."))
-			pressAnyKeyToContinue()
+			commandUtils.PressAnyKeyToContinue()
 		}
 
 		if !utils.ExistsDir(siteDir) {
 			log.Println(utils.Fata("siteDir is not a dir."))
-			pressAnyKeyToContinue()
+			commandUtils.PressAnyKeyToContinue()
 		}
 
 		siteDirName, err := utils.GetLastDirName(siteDir, true)
 		if err != nil {
 			log.Println(utils.Fata("GetLastDirName err:", err.Error()))
-			pressAnyKeyToContinue()
+			commandUtils.PressAnyKeyToContinue()
 		}
 
 		go grt(act, siteModel, actSupported, siteDir, siteDirName)
@@ -155,14 +157,8 @@ func main() {
 			fmt.Print(".")
 		}
 
-		/*		if act != Watch {
-				time.Sleep(time.Second * 5)
-				break
-			}*/
-
 		time.Sleep(time.Second)
 	}
-
 }
 
 func grt(act ActionType, siteModel model.SiteModel, actSupported, siteDir, siteDirName string) {
@@ -195,7 +191,7 @@ _____monitor:
 	if err != nil {
 		global.ErrorToChan(tips, err)
 
-		pressAnyKeyToContinue()
+		commandUtils.PressAnyKeyToContinue()
 		return
 	}
 
@@ -239,11 +235,4 @@ func getMatchSites(siteNameStr string) ([]model.SiteModel, error) {
 	}
 
 	return siteList, nil
-}
-
-func pressAnyKeyToContinue() {
-	fmt.Println("Press any key to exit.")
-	var input string
-	fmt.Scanln(&input)
-	os.Exit(0)
 }

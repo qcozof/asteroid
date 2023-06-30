@@ -10,7 +10,7 @@ monitor-interval: 10 #Watch every 10 seconds
 site-list:
   - site-name: site1 #sitename cannot duplicate
     site-dir: D:\site1 #Specify the site dir to watch
-    include-ext: [] #Watch file extensions, leave [] to watch all files
+    include-ext: ['.php','.asp'] #Watch file extensions, leave [] to watch all files
     exclude-dir: #Ignore watch dirs, leave [] to watch all dirs
       - D:\site1\exclude1
       - D:\site1\exclude2
@@ -44,22 +44,22 @@ email:
 ### II. How to run:
 1. Put `asteroid.exe` file and `misc` dir to the parent level of `D:\site1` like `D:\`
 2. Open a terminal like cmd or powershell  
-#### . Init data
+- #### Init data
 
 `all` can be replace as specify site name, such as `site1`.  
 ```cmd 
 asteroid.exe --act init --site all
 ```
 
-#### . Monitor site  
+- #### Monitor site  
 ```cmd 
 asteroid.exe --act watch --site all
 ```
-#### . Uninstall  
+- ####  Uninstall  
 ```cmd 
 asteroid.exe --act uninstall --site all
 ```
-#### . Version  
+- ####  Version  
 ```cmd 
 asteroid.exe version
 ```
@@ -86,7 +86,7 @@ nssm remove asteroid confirm
 ```
 
 ### Linux
-Expect for the installation service part, the others are almost the same.
+>` Expect for the installation service part, the others are almost the same.`
 
 ### I. Set config
 Refer to windows configuration.
@@ -101,3 +101,6 @@ chmod +x install.sh
 chmod +x uninstall.sh
 ./uninstall.sh
 ```
+
+
+
