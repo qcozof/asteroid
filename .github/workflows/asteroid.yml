@@ -89,9 +89,10 @@ jobs:
 
       - name: Build asteroid
         run: |
-          mkdir -p build_assets
+          mkdir -p build_assets/build/
           go build -v -o build_assets/asteroid -trimpath -ldflags "-s -w -buildid=" 
           cp -r LICENSE README.md misc/ build_assets/
+          cp -r build/linux/ build/windows/ build_assets/build/
 
       - name: Rename Windows asteroid
         if: matrix.goos == 'windows'

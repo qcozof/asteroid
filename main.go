@@ -27,7 +27,7 @@ const (
 
 const noticeTitleLen = 50
 
-//go:embed misc/description.txt
+//go:embed build/description.txt
 var projectDescription string
 
 var commandUtils utils.CommandUtils
@@ -203,7 +203,6 @@ _____monitor:
 		go utils.Countdown(seconds)
 		time.Sleep(time.Duration(seconds) * time.Second)
 
-		global.LogDate = time.Now()
 		goto _____monitor
 	}
 

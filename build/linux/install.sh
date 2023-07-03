@@ -2,7 +2,7 @@
 echo 'Create dir ...'
 mkdir -p /usr/local/etc/asteroid/
 
-cd ..
+cd ../../
 
 echo 'Copy files ...'
 
@@ -13,13 +13,10 @@ if [ ! -f "$file" ]; then
 fi
 
 cp -rf misc/ /usr/local/etc/asteroid/
-cp build/asteroid.service /usr/lib/systemd/system/
+cp build/linux/asteroid.service /usr/lib/systemd/system/
 
 chmod +x asteroid
 cp asteroid /usr/local/bin/
-
-echo "Init sites' files ..."
-./asteroid --act init --site all
 
 echo 'Reload daemon  ...'
 systemctl daemon-reload
@@ -36,5 +33,5 @@ systemctl status asteroid
 echo -e "\033[33;35m ------------------------------------------------- \033[0m"
 echo -e "\033[45;30m        Install Info        \033[0m"
 echo -e "\033[33;35m       data dir：\033[0m" /usr/local/etc/asteroid/
-echo -e "\033[33;35m    config file：\033[0m" /usr/local/etc/asteroid/config.yaml
+echo -e "\033[33;35m    config file：\033[0m" /usr/local/etc/asteroid/misc/config.yaml
 echo -e "\033[33;35m ------------------------------------------------- \033[0m"

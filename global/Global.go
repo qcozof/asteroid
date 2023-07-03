@@ -18,9 +18,8 @@ import (
 )
 
 var (
-	GormDB  *gorm.DB
-	Config  *model.ConfigModel
-	LogDate time.Time
+	GormDB *gorm.DB
+	Config *model.ConfigModel
 )
 
 var (
@@ -135,7 +134,7 @@ func InitLog(runOnce bool) error {
 			logFile.Close()
 		}
 
-		logFileFmt := fmt.Sprintf("%s%s.log", logDir, LogDate.Format("2006-01-02"))
+		logFileFmt := fmt.Sprintf("%s%s.log", logDir, time.Now().Format("2006-01-02"))
 		logFile, err := openFile(logFileFmt)
 		if err != nil {
 			fmt.Println("open log file failed, err:", err)
@@ -175,6 +174,7 @@ func ErrorToChan(msg string, err error) {
 func InfoToChan(obj ...interface{}) {
 	BroadcastInfoList <- fmt.Sprintf("%+v", obj)
 }
+
 func InfoHighlightToChan(obj ...interface{}) {
 	BroadcastHighlightInfoList <- fmt.Sprintf("%+v", obj)
 }
