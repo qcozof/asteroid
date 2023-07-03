@@ -3,15 +3,15 @@ monitor-interval: 10
 site-list:
   - site-name: site1
     site-dir: D:\workspace\dev\test\go\asteroid\site1
-    include-ext: ['.ps','.px']
+    include-ext: ['.php','.asp']
     exclude-dir:
       - D:\workspace\dev\test\go\asteroid\site1\exclude1
       - D:\workspace\dev\test\go\asteroid\site1\exclude2
   - site-name: site2
     site-dir: D:\workspace\dev\test\go\asteroid\site2
     include-ext:
-      - .ps
-      - .px
+      - .py
+      - .php
     exclude-dir:
       - D:\workspace\dev\test\go\asteroid\site2\exclude1
       - D:\workspace\dev\test\go\asteroid\site2\exclude2

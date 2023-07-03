@@ -15,3 +15,7 @@
 # vendor/
 
 /.idea
+/site1
+/site2
+/misc/config.yaml
+/logs

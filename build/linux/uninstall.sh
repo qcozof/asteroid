@@ -6,6 +6,6 @@ systemctl disable asteroid
 echo 'Delete files ...'
 rm -f /usr/lib/systemd/system/asteroid.service
 rm -f /usr/local/bin/asteroid
-rm -f /usr/local/etc/asteroid/config.yaml
+rm -f /usr/local/etc/asteroid/misc/config.yaml
 
 echo 'end'
