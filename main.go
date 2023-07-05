@@ -44,46 +44,40 @@ func main() {
 	flag.StringVar((*string)(&site), "site", "", actSupported)
 	flag.Parse()
 
-	args := flag.Args()
-	if len(args) > 0 && args[0] == "version" {
-		fmt.Println(utils.Pur("v0.1"))
-		commandUtils.PressAnyKeyToContinue()
-	}
-
-	fmt.Println(utils.Pur(projectDescription))
-
-	if len(act) == 0 {
-		log.Println(utils.Fata("missing param --act, usage:"), actSupported)
-		commandUtils.PressAnyKeyToContinue()
-	}
-	if len(site) == 0 {
-		log.Println(utils.Fata("missing param --site usage:"), actSupported)
-		commandUtils.PressAnyKeyToContinue()
-	}
+	utils.Teal(projectDescription+"%s", "")
 
 	if err := global.InitProjDir(); err != nil {
-		log.Println("global.InitProjDir:", utils.Fata(err))
+		utils.Fata("global.InitProjDir:%v", err)
 		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitLog(true); err != nil {
-		log.Println("global.InitLog:", utils.Fata(err))
+		utils.Fata("global.InitLog:%v", err)
+		commandUtils.PressAnyKeyToContinue()
+	}
+
+	if len(act) == 0 {
+		utils.Fata("missing param --act, usage:%s", actSupported)
+		commandUtils.PressAnyKeyToContinue()
+	}
+	if len(site) == 0 {
+		utils.Fata("missing param --site usage:%s", actSupported)
 		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitConfig(); err != nil {
-		log.Println("global.InitConfig:", utils.Fata(err))
+		utils.Fata("global.InitConfig:", err)
 		commandUtils.PressAnyKeyToContinue()
 	}
 
 	if err := global.InitDB(); err != nil {
-		log.Println("global.InitDB:", utils.Fata(err))
+		utils.Fata("global.InitDB:%v", err)
 		commandUtils.PressAnyKeyToContinue()
 	}
 
 	db, err := global.GormDB.DB()
 	if err != nil {
-		log.Println(utils.Fata(err))
+		utils.Fata(err.Error())
 		commandUtils.PressAnyKeyToContinue()
 	}
 	defer db.Close()
@@ -93,31 +87,41 @@ func main() {
 
 	siteList, err := getMatchSites(string(site))
 	if err != nil {
-		log.Println(utils.Fata(err))
+		utils.Fata(err.Error())
 		commandUtils.PressAnyKeyToContinue()
 	}
 
+	siteCount := len(siteList)
+
 	for _, siteModel := range siteList {
-		siteDir := siteModel.SiteDir
-		if strings.TrimSpace(siteDir) == "" {
-			log.Println(utils.Fata("siteDir cannot be empty."))
+		siteDir := strings.TrimSpace(siteModel.SiteDir)
+		if siteDir == "" {
+			utils.Fata("siteDir cannot be empty.")
 			commandUtils.PressAnyKeyToContinue()
 		}
 
+		for _, ex := range siteModel.ExcludeDir {
+			if !strings.Contains(siteDir, ex) {
+				utils.Warn("Please verify the configuration file to ensure that the 'exclude-dir' under the [%s] "+
+					"is a subdirectory of the 'site-dir'.", siteModel.SiteName)
+			}
+		}
+
 		if !utils.ExistsDir(siteDir) {
-			log.Println(utils.Fata("siteDir is not a dir."))
+			utils.Fata("siteDir is not a dir.")
 			commandUtils.PressAnyKeyToContinue()
 		}
 
 		siteDirName, err := utils.GetLastDirName(siteDir, true)
 		if err != nil {
-			log.Println(utils.Fata("GetLastDirName err:", err.Error()))
+			utils.Fata("GetLastDirName err:%v", err.Error())
 			commandUtils.PressAnyKeyToContinue()
 		}
 
 		go grt(act, siteModel, actSupported, siteDir, siteDirName)
 	}
 
+	actDoCount := 0
 	for {
 		select {
 		case info, ok := <-global.BroadcastInfoList:
@@ -125,24 +129,37 @@ func main() {
 				log.Println(info)
 				continue
 			}
-			fmt.Println("info chan NOT OK")
+			utils.Warn("info chan NOT OK")
 		case info, ok := <-global.BroadcastHighlightInfoList:
 			if ok {
-				log.Println(utils.Tea(info))
-				continue
-			}
-			fmt.Println("highlight info chan NOT OK")
+				if info == string(act) {
+					actDoCount++
+				} else {
+					utils.Warn(info)
+					log.Println(info)
+				}
 
-		case err, ok := <-global.BroadcastErrorList:
-			if ok {
-				log.Println(utils.Fata(err))
+				if actDoCount == siteCount {
+					utils.OK("All sites have been %sed successfully !", act)
+					commandUtils.PressAnyKeyToContinue()
+					break
+				}
+
 				continue
 			}
-			fmt.Println("err chan NOT OK")
+			utils.Warn("highlight info chan NOT OK")
+
+		case errMsg, ok := <-global.BroadcastErrorList:
+			if ok {
+				utils.Fata(errMsg)
+				continue
+			}
+			utils.Warn("errMsg chan NOT OK")
 
 		case notice, ok := <-global.BroadcastNoticeList:
 			if ok {
-				log.Println(utils.Warn(notice))
+				utils.Warn(notice)
+				log.Println(notice)
 
 				title := notice
 				if len(title) > noticeTitleLen {
@@ -151,7 +168,7 @@ func main() {
 				go myNotify.NotifyAll("File modified ! "+title, notice, "")
 				continue
 			}
-			fmt.Println("notice chan NOT OK")
+			utils.Warn("notice chan NOT OK")
 
 		default:
 			fmt.Print(".")
@@ -196,17 +213,18 @@ _____monitor:
 	}
 
 	if act == Watch {
-		global.InfoToChan(fmt.Sprintf("[ %s ] under watching ...", siteDir))
+		global.InfoToChan(fmt.Sprintf(`"%s" under watching ...`, siteDir))
 
-		seconds := global.Config.MonitorInterval
-		global.InfoToChan(fmt.Sprintf("sleep %d second(s) ...\n", seconds))
+		seconds := global.Config.WatchInterval
+		//global.InfoToChan(fmt.Sprintf("sleep %d second(s) ...\n", seconds))
 		go utils.Countdown(seconds)
 		time.Sleep(time.Duration(seconds) * time.Second)
 
 		goto _____monitor
 	}
 
-	global.InfoHighlightToChan(siteModel.SiteDir + " OK.")
+	global.InfoHighlightToChan(fmt.Sprintf("%s %v", siteModel.SiteDir, act))
+	global.InfoHighlightToChan(act)
 }
 
 func getMatchSites(siteNameStr string) ([]model.SiteModel, error) {

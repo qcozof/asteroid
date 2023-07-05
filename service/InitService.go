@@ -44,7 +44,7 @@ func InitService(siteModel model.SiteModel, siteDirName string) error {
 	}
 	minutes := time.Now().Sub(beginTime).Minutes()
 
-	global.InfoHighlightToChan(siteDirName, " indexed.", "Spent", minutes, "minutes.")
+	global.InfoHighlightToChan(fmt.Sprintf("%s indexed. Spent %f minutes.", siteDirName, minutes))
 	return nil
 }
 

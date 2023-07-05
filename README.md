@@ -6,7 +6,7 @@ Copy `misc/config.sample.yaml` as `misc/config.yaml` and then edit it.
 
 ```yaml
 asteroid-data-dir: misc #When initializing the asteroid default data directory, it will generate three directories: 'repository', 'backup', and 'isolation'."
-monitor-interval: 10 #Watch every 10 seconds
+watch-interval: 10 #Watch every 10 seconds
 site-list:
   - site-name: site1 #sitename cannot be duplicated
     site-dir: D:\site1 #Specify the site directory to watch

@@ -1,30 +1,45 @@
 package utils
 
-import "fmt"
+import (
+	"github.com/fatih/color"
+	"log"
+)
 
 var (
-	Info = Teal
+	Info = Cyan
 	Warn = Yellow
 	Fata = Red
 	Pur  = Purple
 	Tea  = Teal
+	OK   = HiGreen
 )
 
-var (
-	Black   = Color("\033[1;30m%s\033[0m")
-	Red     = Color("\033[1;31m%s\033[0m")
-	Green   = Color("\033[1;32m%s\033[0m")
-	Yellow  = Color("\033[1;33m%s\033[0m")
-	Purple  = Color("\033[1;34m%s\033[0m")
-	Magenta = Color("\033[1;35m%s\033[0m")
-	Teal    = Color("\033[1;36m%s\033[0m")
-	White   = Color("\033[1;37m%s\033[0m")
-)
+func Cyan(format string, a ...interface{}) {
+	color.Cyan(format, a...)
+}
 
-func Color(colorString string) func(...interface{}) string {
-	sprint := func(args ...interface{}) string {
-		return fmt.Sprintf(colorString,
-			fmt.Sprint(args...))
-	}
-	return sprint
+func Yellow(format string, a ...interface{}) {
+	color.Yellow(format, a...)
+}
+
+func YellowBg(format string, a ...interface{}) {
+	yl := color.New(color.FgYellow, color.BgBlack).PrintfFunc()
+	yl(format, a...)
+}
+
+func Red(format string, a ...interface{}) {
+	color.Red(format, a...)
+	log.Printf(format, a...)
+}
+
+func Purple(format string, a ...interface{}) {
+	color.HiCyan(format, a...)
+}
+
+func Teal(format string, a ...interface{}) {
+	color.HiBlue(format, a...)
+}
+
+func HiGreen(format string, a ...interface{}) {
+	color.HiGreen(format, a...)
 }

@@ -3,7 +3,7 @@ package global
 import (
 	"errors"
 	"fmt"
-	"io"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	"sync"
@@ -53,7 +53,9 @@ func InitDB() error {
 		return err
 	}
 
-	GormDB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	GormDB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return err
 	}
@@ -125,7 +127,7 @@ func InitLog(runOnce bool) error {
 		}
 	}
 
-	var logFile os.File
+	var logFile *os.File
 	for {
 		if !runOnce {
 			now := time.Now()
@@ -135,7 +137,7 @@ func InitLog(runOnce bool) error {
 		}
 
 		logFileFmt := fmt.Sprintf("%s%s.log", logDir, time.Now().Format("2006-01-02"))
-		logFile, err := openFile(logFileFmt)
+		logFile, err = os.OpenFile(logFileFmt, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //openFile(logFileFmt)
 		if err != nil {
 			fmt.Println("open log file failed, err:", err)
 			return err
@@ -144,11 +146,11 @@ func InitLog(runOnce bool) error {
 		//defer logFile.Close()
 
 		//both write to console and file
-		multiWriter := io.MultiWriter(os.Stdout, logFile)
-		log.SetOutput(multiWriter)
+		//multiWriter := io.MultiWriter(os.Stdout, logFile)
+		//log.SetOutput(multiWriter)
 
 		//only write to file
-		//log.SetOutput(logFile)
+		log.SetOutput(logFile)
 
 		log.SetPrefix(" [asteroid] ")
 		log.SetFlags(log.Lshortfile | log.Lmicroseconds | log.Ldate)
@@ -161,24 +163,26 @@ func InitLog(runOnce bool) error {
 	return err
 }
 
-func openFile(logFileFmt string) (*os.File, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
-	return os.OpenFile(logFileFmt, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-}
-
 func ErrorToChan(msg string, err error) {
 	BroadcastErrorList <- msg + err.Error()
 }
 
 func InfoToChan(obj ...interface{}) {
-	BroadcastInfoList <- fmt.Sprintf("%+v", obj)
+	BroadcastInfoList <- obj2Str(obj...)
 }
 
 func InfoHighlightToChan(obj ...interface{}) {
-	BroadcastHighlightInfoList <- fmt.Sprintf("%+v", obj)
+	BroadcastHighlightInfoList <- obj2Str(obj...)
 }
 
 func NoticeToChan(obj ...interface{}) {
-	BroadcastNoticeList <- fmt.Sprintf("%+v", obj)
+	BroadcastNoticeList <- obj2Str(obj...)
+}
+
+func obj2Str(obj ...interface{}) string {
+	var result string
+	for _, o := range obj {
+		result += fmt.Sprint(o)
+	}
+	return result
 }

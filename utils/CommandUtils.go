@@ -9,7 +9,7 @@ type CommandUtils struct {
 }
 
 func (CommandUtils) PressAnyKeyToContinue() {
-	fmt.Println("Press any key to exit.")
+	fmt.Println("\nPress any key to exit.")
 	var input string
 	fmt.Scanln(&input)
 	os.Exit(0)

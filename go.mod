@@ -3,6 +3,7 @@ module github.com/qcozof/asteroid
 go 1.20
 
 require (
+	github.com/fatih/color v1.13.0
 	github.com/glebarez/sqlite v1.7.0
 	github.com/qcozof/my-notify v0.0.0-20230419094835-c2dc68912fd3
 	gopkg.in/yaml.v3 v3.0.1
@@ -34,6 +35,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.18 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect

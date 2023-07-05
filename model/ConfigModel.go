@@ -2,7 +2,7 @@ package model
 
 type ConfigModel struct {
 	AsteroidDataDir string      `json:"asteroidDataDir" yaml:"asteroid-data-dir"`
-	MonitorInterval int64       `json:"monitorInterval" yaml:"monitor-interval"`
+	WatchInterval   int64       `json:"monitorInterval" yaml:"watch-interval"`
 	SiteList        []SiteModel `json:"siteList" yaml:"site-list"`
 }
 

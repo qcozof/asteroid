@@ -1,3 +1,0 @@
-asteroid v1.0
-An asteroid is watching your sites !
-------------------------------------

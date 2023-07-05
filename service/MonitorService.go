@@ -47,10 +47,11 @@ func MonitorService(siteModel model.SiteModel, siteDir, siteDirName string) erro
 					replaceFile(originalFile, file, f.Perm)
 
 				default:
-
+					
 				}
 			} else {
 				fmt.Println("hash equal:", file)
+				time.Sleep(time.Nanosecond)
 			}
 
 			//2).not in table,remove
@@ -94,7 +95,7 @@ func replaceFile(originalFile, file string, originalPerm fs.FileMode) {
 	if err != nil {
 		global.ErrorToChan("replaceFile.utils.CopyFile err:", err)
 	} else {
-		global.NoticeToChan("file restored:", filepath.Base(file), originalFile, "=>", file)
+		global.NoticeToChan(fmt.Sprintf("file restored:%s %s=>%s", filepath.Base(file), originalFile, file))
 		if err = utils.SetPerm(file, originalPerm); err != nil {
 			global.ErrorToChan("replace utils.SetPerm err:", err)
 		}
@@ -106,7 +107,7 @@ func backupFile(file, destFile string) {
 	if err != nil {
 		global.ErrorToChan("backupFile.utils.CopyFile err:", err)
 	} else {
-		global.InfoToChan("backup file:", file, "=>", destFile)
+		global.InfoToChan(fmt.Sprintf("backup file:%s => %s", file, destFile))
 	}
 }
 
@@ -115,7 +116,7 @@ func isolateFile(file, destFile string) {
 	if err != nil {
 		global.ErrorToChan("utils.CopyFile err:", err)
 	} else {
-		global.NoticeToChan("isolate file:", file, "=>", destFile)
+		global.NoticeToChan(fmt.Sprintf("isolate file: %s=>%s", file, destFile))
 	}
 
 	if err = utils.RemoveAll(file); err != nil {
