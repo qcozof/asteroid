@@ -7,9 +7,12 @@ import (
 	"github.com/qcozof/asteroid/utils"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
+
+var batchFileList []model.FileListModel
 
 func InitService(siteModel model.SiteModel, siteDirName string) error {
 	//I.store original files to repository
@@ -42,6 +45,18 @@ func InitService(siteModel model.SiteModel, siteDirName string) error {
 	if err := copyToRepository(siteModel, siteDirName, siteModel.SiteDir, global.RepositoryDir+siteDirName); err != nil {
 		return err
 	}
+
+	tmpStr := strconv.Itoa(len(batchFileList))
+	err := os.WriteFile(siteModel.SiteName+".txt", []byte(tmpStr), 0666)
+	if err != nil {
+		return err
+	}
+
+	err = global.GormDB.CreateInBatches(batchFileList, len(batchFileList)/9).Error
+	if err != nil {
+		return err
+	}
+
 	minutes := time.Now().Sub(beginTime).Minutes()
 
 	global.InfoHighlightToChan(fmt.Sprintf("%s indexed. Spent %f minutes.", siteDirName, minutes))
@@ -130,10 +145,8 @@ func addToDb(file, siteName string) {
 		CreateTime: time.Now().Unix(),
 		UpdateTime: time.Now().Unix(),
 	}
-	err = global.GormDB.Create(&fileList).Error
-	if err != nil {
-		global.ErrorToChan("global.GormDB.Create err:", err)
-	}
+
+	batchFileList = append(batchFileList, fileList)
 }
 
 func ListFolderFiles(dir string) []string {

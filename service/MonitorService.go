@@ -12,18 +12,55 @@ import (
 	"time"
 )
 
+var mpSiteDir = map[string][]model.FileListModel{}
+var mpSiteFileList = map[string][]model.FileListModel{}
+
+func getFileDirListBySite(siteDirName string) (fileDirList []model.FileListModel, err error) {
+	if val, exists := mpSiteDir[siteDirName]; exists && len(val) > 0 {
+		return val, nil
+	}
+
+	if err = global.GormDB.Select("file_dir").Where("site=?", siteDirName).Group("file_dir").Find(&fileDirList).Error; err != nil {
+		return fileDirList, err
+	}
+
+	mpSiteDir[siteDirName] = fileDirList
+	return fileDirList, err
+}
+
+func getFileListBySite(fileDir string) (fileList []model.FileListModel, err error) {
+	if val, exists := mpSiteFileList[fileDir]; exists && len(val) > 0 {
+		return val, nil
+	}
+
+	if err := global.GormDB.Select("file_dir,file_name,hash,perm,policy").Where("file_dir=?", fileDir).Find(&fileList).Error; err != nil {
+		return fileList, err
+	}
+
+	mpSiteFileList[fileDir] = fileList
+	return fileList, err
+}
+
 func MonitorService(siteModel model.SiteModel, siteDir, siteDirName string) error {
 
-	var fileDirList []model.FileListModel
-	if err := global.GormDB.Select("file_dir").Where("site=?", siteDirName).Group("file_dir").Find(&fileDirList).Error; err != nil {
+	/*	var fileDirList []model.FileListModel
+		if err := global.GormDB.Select("file_dir").Where("site=?", siteDirName).Group("file_dir").Find(&fileDirList).Error; err != nil {
+			return err
+		}*/
+	fileDirList, err := getFileDirListBySite(siteDirName)
+	if err != nil {
 		return err
 	}
 
 	repositoryDir := global.RepositoryDir
 
 	for _, m := range fileDirList {
-		var fileList []model.FileListModel
-		if err := global.GormDB.Select("file_dir,file_name,hash,perm,policy").Where("file_dir=?", m.FileDir).Find(&fileList).Error; err != nil {
+		/*		var fileList []model.FileListModel
+				if err := global.GormDB.Select("file_dir,file_name,hash,perm,policy").Where("file_dir=?", m.FileDir).Find(&fileList).Error; err != nil {
+					return err
+				}*/
+		fileList, err := getFileListBySite(m.FileDir)
+		if err != nil {
 			return err
 		}
 
@@ -47,7 +84,7 @@ func MonitorService(siteModel model.SiteModel, siteDir, siteDirName string) erro
 					replaceFile(originalFile, file, f.Perm)
 
 				default:
-					
+
 				}
 			} else {
 				fmt.Println("hash equal:", file)

@@ -23,12 +23,16 @@ const (
 	Init      ActionType = "init"
 	Watch     ActionType = "watch"
 	Uninstall ActionType = "uninstall"
+	Reset     ActionType = "reset"
 )
 
 const noticeTitleLen = 50
 
 //go:embed build/description.txt
 var projectDescription string
+
+//go:embed build/file_list.sql
+var initSql string
 
 var commandUtils utils.CommandUtils
 
@@ -56,11 +60,14 @@ func main() {
 		commandUtils.PressAnyKeyToContinue()
 	}
 
+	log.Println("program started !")
+
 	if len(act) == 0 {
 		utils.Fata("missing param --act, usage:%s", actSupported)
 		commandUtils.PressAnyKeyToContinue()
 	}
-	if len(site) == 0 {
+
+	if act != Reset && len(site) == 0 {
 		utils.Fata("missing param --site usage:%s", actSupported)
 		commandUtils.PressAnyKeyToContinue()
 	}
@@ -85,6 +92,16 @@ func main() {
 	myNotify.InitConfig(global.ConfigFile)
 	go global.InitLog(false)
 
+	if act == Reset {
+		if err = service.Reset(initSql); err != nil {
+			utils.Fata(err.Error())
+		} else {
+			utils.OK("Reset successfully !")
+		}
+
+		commandUtils.PressAnyKeyToContinue()
+	}
+
 	siteList, err := getMatchSites(string(site))
 	if err != nil {
 		utils.Fata(err.Error())
@@ -96,6 +113,7 @@ func main() {
 	for _, siteModel := range siteList {
 		siteDir := strings.TrimSpace(siteModel.SiteDir)
 		if siteDir == "" {
+
 			utils.Fata("siteDir cannot be empty.")
 			commandUtils.PressAnyKeyToContinue()
 		}

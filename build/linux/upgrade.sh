@@ -2,10 +2,10 @@
 
 echo 'Upgrade main program.'
 
+cd ../../
+
 echo 'Grant executable permission ...'
 chmod +x asteroid
-
-cd ../../
 
 echo 'Clean file ...'
 rm -f /usr/local/bin/asteroid

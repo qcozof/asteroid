@@ -57,9 +57,10 @@ asteroid.exe --act watch --site all
 ```cmd 
 asteroid.exe --act uninstall --site all
 ```
-- ####  Version
+- ####  Reset
+> Reset will reinitialize all data
 ```cmd 
-asteroid.exe version
+asteroid.exe --act reset
 ```
 
 ### III. Install as service

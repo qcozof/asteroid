@@ -31,3 +31,25 @@ func Uninstall(siteDirName string) error {
 
 	return utils.RemoveAll(global.IsolationDir + siteDirName)
 }
+
+func Reset(initSql string) error {
+	var err error
+
+	if err = global.GormDB.Exec(initSql).Error; err != nil {
+		return err
+	}
+
+	if err = utils.RemoveAll(global.RepositoryDir); err != nil {
+		return err
+	}
+
+	if err = utils.RemoveAll(global.BackupDir); err != nil {
+		return err
+	}
+
+	/*	if err = utils.RemoveAll(global.LogDir); err != nil {
+		return err
+	}*/
+
+	return utils.RemoveAll(global.IsolationDir)
+}
