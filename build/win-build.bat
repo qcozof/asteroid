@@ -1,4 +1,25 @@
+
 @echo off
+
+::0.set version
+
+for /f "delims=" %%i in ('git describe --abbrev=0 --tags') do set "latest_tag=%%i"
+
+set "search=${version}"
+set "replace=%latest_tag%"
+
+set "inputFile=description.txt"
+set "outputFile=output.txt"
+
+copy "%inputFile%" "%inputFile%".bak
+
+(for /f "delims=" %%i in ('type "%inputFile%"') do (
+    set "line=%%i"
+    call set "line=%%line:%search%=%replace%%%"
+    echo(!line!
+)) > "%outputFile%"
+
+move /y "%outputFile%" "%inputFile%"
 
 ::1.go install github.com/akavel/rsrc@latest
 echo install rsrc
@@ -15,5 +36,7 @@ echo build
 go build
 
 del asteroid.syso
+
+move /y "%inputFile%".bak "%inputFile%"
 
 echo finished.
