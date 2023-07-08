@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	GormDB *gorm.DB
-	Config *model.ConfigModel
+	GormDB  *gorm.DB
+	Config  *model.ConfigModel
+	LogFile *os.File
 )
 
 var (
@@ -127,30 +128,29 @@ func InitLog(runOnce bool) error {
 		}
 	}
 
-	var logFile *os.File
 	for {
 		if !runOnce {
 			now := time.Now()
 			tomorrow0Ux := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
 			time.Sleep(time.Duration(tomorrow0Ux.Sub(now).Nanoseconds()) * time.Nanosecond) //10000s
-			logFile.Close()
+			LogFile.Close()
 		}
 
 		logFileFmt := fmt.Sprintf("%s%s.log", logDir, time.Now().Format("2006-01-02"))
-		logFile, err = os.OpenFile(logFileFmt, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //openFile(logFileFmt)
+		LogFile, err = os.OpenFile(logFileFmt, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //openFile(logFileFmt)
 		if err != nil {
 			fmt.Println("open log file failed, err:", err)
 			return err
 		}
 
-		//defer logFile.Close()
+		//defer LogFile.Close()
 
 		//both write to console and file
-		//multiWriter := io.MultiWriter(os.Stdout, logFile)
+		//multiWriter := io.MultiWriter(os.Stdout, LogFile)
 		//log.SetOutput(multiWriter)
 
 		//only write to file
-		log.SetOutput(logFile)
+		log.SetOutput(LogFile)
 
 		log.SetPrefix(" [asteroid] ")
 		log.SetFlags(log.Lshortfile | log.Lmicroseconds | log.Ldate)

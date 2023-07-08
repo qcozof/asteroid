@@ -25,10 +25,6 @@ func Uninstall(siteDirName string) error {
 		return err
 	}
 
-	/*	if err = utils.RemoveAll(global.LogDir); err != nil {
-		return err
-	}*/
-
 	return utils.RemoveAll(global.IsolationDir + siteDirName)
 }
 
@@ -47,9 +43,11 @@ func Reset(initSql string) error {
 		return err
 	}
 
-	/*	if err = utils.RemoveAll(global.LogDir); err != nil {
-		return err
-	}*/
+	if err = global.LogFile.Close(); err == nil {
+		if err = utils.RemoveAll(global.LogDir); err != nil {
+			return err
+		}
+	}
 
 	return utils.RemoveAll(global.IsolationDir)
 }
