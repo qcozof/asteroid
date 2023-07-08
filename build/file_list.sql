@@ -22,3 +22,5 @@ CREATE TABLE "file_list" (
 DROP TABLE IF EXISTS  "sqlite_sequence";
 
 PRAGMA foreign_keys = true;
+
+VACUUM;
