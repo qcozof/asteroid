@@ -119,7 +119,7 @@ func main() {
 		}
 
 		for _, ex := range siteModel.ExcludeDir {
-			if !strings.Contains(siteDir, ex) {
+			if !strings.Contains(ex, siteDir) {
 				utils.Warn("Please verify the configuration file to ensure that the 'exclude-dir' under the [%s] "+
 					"is a subdirectory of the 'site-dir'.", siteModel.SiteName)
 			}
